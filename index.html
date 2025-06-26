@@ -8,8 +8,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <!-- Chosen Palette: Calm & Assuring -->
-    <!-- Application Structure Plan: The SPA is structured with a tab-based navigation to separate three core user tasks: Dashboard Overview, Daily Data Entry, and Detailed Reports. This is more user-friendly than a single long-scrolling page, as it provides a focused workspace for each activity. The Dashboard offers an immediate high-level summary, the Data Entry tab provides a clear form and log for inputting data, and the Reports tab allows for specific deep-dive analysis. This architecture guides the user logically from overview to detail. -->
-    <!-- Visualization & Content Choices: Report Info -> Goal -> Viz/Presentation Method -> Interaction -> Justification -> Library/Method. 1. Key Metrics (Today's Profit, MTD Sales) -> Inform -> Large Number KPIs -> Instant read -> Provides immediate business health status. 2. Monthly Profit -> Change -> Bar Chart -> Hover for details -> Compares discrete time periods effectively (Chart.js/Canvas). 3. Production & Revenue Mix -> Compare -> Donut Charts -> Hover for percentages -> Ideal for showing part-to-whole composition (Chart.js/Canvas). 4. Daily Operations -> Organize -> HTML Form & Table -> Form submission updates data -> Standard, intuitive method for data entry and review. 5. Process Flow -> Organize -> Diagram -> Static display -> Visually explains the business model simply (HTML/CSS). -->
+    <!-- Application Structure Plan: The SPA is structured with a tab-based navigation to separate three core user tasks: Dashboard Overview, Daily Data Entry, and Detailed Reports. This is more user-friendly than a single long-scrolling page, as it provides a focused workspace for each activity. The Dashboard offers an immediate high-level summary, the Data Entry tab provides a clear form and log for inputting data, and the Reports tab allows for specific deep-dive analysis. This architecture guides the user logically from overview to detail. A new 'Download Reports' tab is added for specific file export functionality. -->
+    <!-- Visualization & Content Choices: Report Info -> Goal -> Viz/Presentation Method -> Interaction -> Justification -> Library/Method. 1. Key Metrics (Today's Profit, MTD Sales) -> Inform -> Large Number KPIs -> Instant read -> Provides immediate business health status. 2. Monthly Profit -> Change -> Bar Chart -> Hover for details -> Compares discrete time periods effectively (Chart.js/Canvas). 3. Production & Revenue Mix -> Compare -> Donut Charts -> Hover for percentages -> Ideal for showing part-to-whole composition (Chart.js/Canvas). 4. Daily Operations -> Organize -> HTML Form & Table -> Form submission updates data -> Standard, intuitive method for data entry and review. 5. Process Flow -> Organize -> Diagram -> Static display -> Visually explains the business model simply (HTML/CSS). 6. Downloadable Reports -> Inform/Organize -> Form with Download Button -> User selection of report type and period leads to CSV download -> Provides data portability and offline analysis capabilities. -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #F0F4F8; }
@@ -34,6 +34,7 @@
                 <a id="nav-dashboard" class="nav-link active">Dashboard</a>
                 <a id="nav-entry" class="nav-link">Data Entry</a>
                 <a id="nav-reports" class="nav-link">Reports</a>
+                <a id="nav-download" class="nav-link">Download Reports</a>
             </div>
         </nav>
     </header>
@@ -155,6 +156,36 @@
                 </div>
             </div>
         </section>
+
+        <section id="view-download" class="content-section">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Download Reports</h2>
+                <div class="flex flex-col md:flex-row gap-4 items-start mb-6 border-b pb-6">
+                    <div class="flex-grow w-full md:w-auto">
+                        <label for="download-report-type" class="block text-sm font-medium text-gray-700">Report Type</label>
+                        <select id="download-report-type" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2">
+                            <option value="daily_log">Daily Operations Log (CSV)</option>
+                            <!-- Future report types could be added here -->
+                            <!-- <option value="monthly_summary">Monthly Summary (CSV)</option> -->
+                            <!-- <option value="annual_summary">Annual Summary (CSV)</option> -->
+                        </select>
+                    </div>
+                    <div class="w-full md:w-auto">
+                        <label for="download-year" class="block text-sm font-medium text-gray-700">Year (for Daily Log)</label>
+                        <select id="download-year" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2"></select>
+                    </div>
+                    <div class="w-full md:w-auto">
+                        <label for="download-month" class="block text-sm font-medium text-gray-700">Month (for Daily Log)</label>
+                        <select id="download-month" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2">
+                            <option value="all">All Months</option>
+                        </select>
+                    </div>
+                    <button id="download-button" class="mt-6 md:mt-1 block w-full md:w-auto bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 transition self-end">Generate & Download</button>
+                </div>
+                <div id="download-status" class="text-center text-gray-600 mt-4"></div>
+            </div>
+        </section>
+
     </main>
 
     <script>
@@ -197,6 +228,7 @@
                 if (state.activeView === 'dashboard') renderDashboard();
                 if (state.activeView === 'entry') renderEntryLog();
                 if (state.activeView === 'reports') renderReportsView();
+                if (state.activeView === 'download') renderDownloadReportsView();
             }
 
             function renderDashboard() {
@@ -324,7 +356,7 @@
                     return; 
                 }
 
-                const years = [...new Set(state.db.map(d => new Date(d.date).getFullYear()))];
+                const years = [...new Set(state.db.map(d => new Date(d.date).getFullYear()))].sort((a, b) => b - a); // Sort years descending
                 yearSelect.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
                 const months = Array.from({length: 12}, (_, i) => new Date(0, i).toLocaleString('en-US', {month: 'long'}));
                 monthSelect.innerHTML = '<option value="all">All Year</option>' + months.map((m, i) => `<option value="${i}">${m}</option>`).join('');
@@ -375,6 +407,85 @@
                 yearSelect.addEventListener('change', handleReportGeneration);
                 monthSelect.addEventListener('change', handleReportGeneration);
                 handleReportGeneration();
+            }
+
+            function renderDownloadReportsView() {
+                const downloadYearSelect = document.getElementById('download-year');
+                const downloadMonthSelect = document.getElementById('download-month');
+                const downloadButton = document.getElementById('download-button');
+                const downloadStatus = document.getElementById('download-status');
+
+                if (!downloadYearSelect || !downloadMonthSelect || !downloadButton || !downloadStatus) {
+                    return;
+                }
+
+                const years = [...new Set(state.db.map(d => new Date(d.date).getFullYear()))].sort((a, b) => b - a);
+                downloadYearSelect.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+                const months = Array.from({length: 12}, (_, i) => new Date(0, i).toLocaleString('en-US', {month: 'long'}));
+                downloadMonthSelect.innerHTML = '<option value="all">All Months</option>' + months.map((m, i) => `<option value="${i}">${m}</option>`).join('');
+
+                downloadButton.onclick = () => {
+                    const reportType = document.getElementById('download-report-type').value;
+                    const selectedYear = parseInt(downloadYearSelect.value);
+                    const selectedMonth = downloadMonthSelect.value === 'all' ? 'all' : parseInt(downloadMonthSelect.value);
+                    
+                    let dataToDownload = [];
+                    let filename = '';
+                    let headers = [];
+
+                    if (reportType === 'daily_log') {
+                        let filteredData = state.db.filter(d => new Date(d.date).getFullYear() === selectedYear);
+                        if (selectedMonth !== 'all') {
+                            filteredData = filteredData.filter(d => new Date(d.date).getMonth() === selectedMonth);
+                        }
+                        
+                        headers = [
+                            "Date", "Fresh Maize Purchased (Kg)", "Cost of Fresh Maize (UGX)",
+                            "Maize Milled (Kg)", "Expected Maize Flour (Kg)", "Actual Maize Flour Produced (Kg)",
+                            "Milling Loss (Kg)", "Maize Bran Produced (Kg)", "Sales of Maize Flour (Kg)",
+                            "Unit Price of Maize Flour (UGX/Kg)", "Sales Revenue - Maize Flour (UGX)",
+                            "Sales of Maize Bran (Kg)", "Unit Price of Maize Bran (UGX/Kg)",
+                            "Sales Revenue - Maize Bran (UGX)", "Total Daily Sales Revenue (UGX)",
+                            "Daily Profit/Loss (UGX)"
+                        ];
+
+                        dataToDownload = filteredData.map(row => [
+                            row.date, row.maizePurchased, row.costMaize,
+                            row.maizeMilled, row.maizeMilled * 0.70, row.flourProduced, // Expected Flour
+                            row.maizeMilled - (row.flourProduced + row.branProduced), // Milling Loss (actual)
+                            row.branProduced, row.flourSold,
+                            row.flourPrice, row.flourRevenue,
+                            row.branSold, row.branPrice,
+                            row.branRevenue, row.totalRevenue,
+                            row.profit
+                        ]);
+                        filename = `daily_log_${selectedYear}${selectedMonth !== 'all' ? `_${months[selectedMonth].toLowerCase()}` : '_all'}.csv`;
+                    }
+                    // Add logic for 'monthly_summary' or 'annual_summary' here in the future
+                    // else if (reportType === 'monthly_summary') { ... }
+
+                    if (dataToDownload.length === 0) {
+                        downloadStatus.textContent = "No data to download for the selected criteria.";
+                        return;
+                    }
+
+                    const csvContent = [
+                        headers.map(header => `"${header}"`).join(','),
+                        ...dataToDownload.map(row => row.map(item => `"${item}"`).join(','))
+                    ].join('\n');
+
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.setAttribute('href', url);
+                    link.setAttribute('download', filename);
+                    link.style.visibility = 'hidden';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                    downloadStatus.textContent = `"${filename}" downloaded successfully!`;
+                };
             }
 
             document.getElementById('daily-entry-form').addEventListener('submit', (e) => {
