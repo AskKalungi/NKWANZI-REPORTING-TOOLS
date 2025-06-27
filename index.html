@@ -8,8 +8,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <!-- Chosen Palette: Calm & Assuring -->
-    <!-- Application Structure Plan: The SPA is structured with a tab-based navigation to separate three core user tasks: Dashboard Overview, Daily Data Entry, and Detailed Reports. This is more user-friendly than a single long-scrolling page, as it provides a focused workspace for each activity. The Dashboard offers an immediate high-level summary, the Data Entry tab provides a clear form and log for inputting data, and the Reports tab allows for specific deep-dive analysis. This architecture guides the user logically from overview to detail. A new 'Download Reports' tab is added for specific file export functionality. A login screen is introduced to gate access to the entire application. -->
-    <!-- Visualization & Content Choices: Report Info -> Goal -> Viz/Presentation Method -> Interaction -> Justification -> Library/Method. 1. Key Metrics (Today's Profit, MTD Sales) -> Inform -> Large Number KPIs -> Instant read -> Provides immediate business health status. 2. Monthly Profit -> Change -> Bar Chart -> Hover for details -> Compares discrete time periods effectively (Chart.js/Canvas). 3. Production & Revenue Mix -> Compare -> Donut Charts -> Hover for percentages -> Ideal for showing part-to-whole composition (Chart.js/Canvas). 4. Daily Operations -> Organize -> HTML Form & Table -> Form submission updates data -> Standard, intuitive method for data entry and review. 5. Process Flow -> Organize -> Diagram -> Static display -> Visually explains the business model simply (HTML/CSS). 6. Downloadable Reports -> Inform/Organize -> Form with Download Button -> User selection of report type and period leads to CSV download -> Provides data portability and offline analysis capabilities. 7. Login Page -> Secure Access (Basic) -> Form with input fields and button -> Validates against hardcoded credentials; on success, shows main app. -->
+    <!-- Application Structure Plan: The SPA is structured with a tab-based navigation to separate core user tasks: Dashboard Overview, Daily Data Entry, Detailed Reports, and Download Reports. A robust login and sign-up system using Firebase Authentication is implemented, gating access to the main content. All operational data is now persistently stored and retrieved from Firebase Firestore, ensuring data integrity and multi-staff access. -->
+    <!-- Visualization & Content Choices: Report Info -> Goal -> Viz/Presentation Method -> Interaction -> Justification -> Library/Method. 1. Key Metrics (Today's Profit, MTD Sales) -> Inform -> Large Number KPIs -> Instant read -> Provides immediate business health status. 2. Monthly Profit -> Change -> Bar Chart -> Hover for details -> Compares discrete time periods effectively (Chart.js/Canvas). 3. Production & Revenue Mix -> Compare -> Donut Charts -> Hover for percentages -> Ideal for showing part-to-whole composition (Chart.js/Canvas). 4. Daily Operations -> Organize -> HTML Form & Table -> Form submission and display uses Firebase Firestore -> Standard, intuitive method for data entry and real-time review. 5. Downloadable Reports -> Inform/Organize -> Form with Download Button (data from Firestore) -> User selection of report type and period leads to CSV download -> Provides data portability and offline analysis. 6. Login/Signup Page -> Secure Access -> Forms with input fields and buttons -> Firebase Auth handles email/password login, account creation, and email verification. -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #F0F4F8; }
@@ -20,29 +20,33 @@
         .kpi-card { background-color: white; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); padding: 1.5rem; text-align: center; }
         .content-section { display: none; }
         .content-section.active { display: block; }
-        #login-section { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background-color: #E0E7ED; padding: 1rem; }
-        #login-form-card { background-color: white; padding: 2rem; border-radius: 0.75rem; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); width: 100%; max-width: 400px; }
+        #auth-section { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background-color: #E0E7ED; padding: 1rem; }
+        #auth-form-card { background-color: white; padding: 2rem; border-radius: 0.75rem; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); width: 100%; max-width: 400px; }
         .hidden { display: none; }
     </style>
 </head>
 <body>
 
-    <div id="login-section">
-        <div id="login-form-card">
+    <div id="auth-section">
+        <div id="auth-form-card">
             <h2 class="text-3xl font-bold text-gray-800 text-center mb-6">NATIVE AGROFOODS UG</h2>
-            <p class="text-center text-gray-600 mb-6">Staff Login</p>
-            <form id="login-form" class="space-y-4">
+            <p id="auth-title" class="text-center text-gray-600 mb-6">Staff Login</p>
+            <form id="auth-form" class="space-y-4">
                 <div>
-                    <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
-                    <input type="text" id="username" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+                    <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                    <input type="email" id="email" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
                 </div>
                 <div>
-                    <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
-                    <input type="password" id="password" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+                    <label for="auth-password" class="block text-sm font-medium text-gray-700">Password</label>
+                    <input type="password" id="auth-password" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
                 </div>
-                <div id="login-error-message" class="text-red-600 text-sm text-center hidden">Invalid username or password.</div>
-                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 transition">Login</button>
+                <div id="auth-error-message" class="text-red-600 text-sm text-center hidden"></div>
+                <div id="email-verification-message" class="text-green-600 text-sm text-center hidden">Verification email sent! Please check your inbox.</div>
+                <button type="submit" id="auth-submit-button" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 transition">Login</button>
             </form>
+            <div class="mt-4 text-center">
+                <button id="toggle-auth-mode" class="text-blue-600 hover:underline text-sm">Don't have an account? Sign Up</button>
+            </div>
         </div>
     </div>
 
@@ -52,6 +56,7 @@
                 <div>
                     <h1 class="text-3xl font-bold text-gray-800">NATIVE AGROFOODS UG</h1>
                     <p class="text-gray-500">Maize Milling Dashboard</p>
+                    <p id="user-id-display" class="text-sm text-gray-400 mt-1">User ID: Loading...</p>
                 </div>
                 <button id="logout-button" class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition">Logout</button>
             </div>
@@ -215,388 +220,533 @@
         </main>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // Hardcoded credentials (NOT secure for production!)
-            const VALID_USERNAME = 'agrofoods';
-            const VALID_PASSWORD = 'maize2025';
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, sendEmailVerification, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
 
-            const state = {
-                activeView: 'dashboard',
-                charts: {},
-                db: [
-                    { date: '2025-06-01', maizePurchased: 500, maizeUnitPrice: 1200, flourProduced: 348, flourSold: 340, flourPrice: 2000, branSold: 150, branPrice: 500 },
-                    { date: '2025-06-02', maizePurchased: 520, maizeUnitPrice: 1200, flourProduced: 365, flourSold: 360, flourPrice: 2000, branSold: 155, branPrice: 500 },
-                    { date: '2025-06-03', maizePurchased: 480, maizeUnitPrice: 1200, flourProduced: 335, flourSold: 330, flourPrice: 2050, branSold: 140, branPrice: 520 },
-                    { date: '2025-05-20', maizePurchased: 600, maizeUnitPrice: 1200, flourProduced: 420, flourSold: 410, flourPrice: 2000, branSold: 175, branPrice: 500 },
-                    { date: '2025-04-15', maizePurchased: 550, maizeUnitPrice: 1200, flourProduced: 385, flourSold: 380, flourPrice: 1950, branSold: 160, branPrice: 480 },
-                ],
-                isLoggedIn: localStorage.getItem('isLoggedIn') === 'true' 
-            };
+        // Firebase config and app ID will be injected by the environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
 
-            const processData = (entry) => {
-                const maizeMilled = entry.maizePurchased;
-                const costMaize = entry.maizePurchased * entry.maizeUnitPrice; // Calculate total cost
-                const branProduced = maizeMilled * 0.3;
-                const flourRevenue = entry.flourSold * entry.flourPrice;
-                const branRevenue = entry.branSold * entry.branPrice;
-                const totalRevenue = flourRevenue + branRevenue;
-                const profit = totalRevenue - costMaize;
-                return { ...entry, maizeMilled, costMaize, branProduced, flourRevenue, branRevenue, totalRevenue, profit };
-            };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
-            state.db = state.db.map(processData).sort((a,b) => new Date(b.date) - new Date(a.date));
-            
-            const formatCurrency = (value) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'UGX', minimumFractionDigits: 0 }).format(value);
+        const state = {
+            activeView: 'dashboard',
+            charts: {},
+            dbData: [], // This will now hold data fetched from Firestore
+            isLoggedIn: false, // Initial state, determined by Firebase Auth
+            currentUser: null,
+            authReady: false // To track if Firebase auth state is initialized
+        };
 
-            function updateUI() {
-                const loginSection = document.getElementById('login-section');
-                const mainContent = document.getElementById('main-content');
-                const views = document.querySelectorAll('.content-section');
-                const navLinks = document.querySelectorAll('.nav-link');
+        const processData = (entry) => {
+            const maizeMilled = entry.maizePurchased;
+            const costMaize = entry.maizePurchased * entry.maizeUnitPrice;
+            const branProduced = maizeMilled * 0.3;
+            const flourRevenue = entry.flourSold * entry.flourPrice;
+            const branRevenue = entry.branSold * entry.branPrice;
+            const totalRevenue = flourRevenue + branRevenue;
+            const profit = totalRevenue - costMaize;
+            return { ...entry, costMaize, maizeMilled, branProduced, flourRevenue, branRevenue, totalRevenue, profit };
+        };
 
-                if (state.isLoggedIn) {
-                    if (loginSection) loginSection.classList.add('hidden');
-                    if (mainContent) mainContent.classList.remove('hidden');
+        const formatCurrency = (value) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'UGX', minimumFractionDigits: 0 }).format(value);
 
-                    views.forEach(view => view.classList.remove('active'));
-                    navLinks.forEach(link => link.classList.remove('active'));
+        function updateUI() {
+            const authSection = document.getElementById('auth-section');
+            const mainContent = document.getElementById('main-content');
+            const views = document.querySelectorAll('.content-section');
+            const navLinks = document.querySelectorAll('.nav-link');
+            const userIdDisplay = document.getElementById('user-id-display');
 
-                    document.getElementById(`view-${state.activeView}`).classList.add('active');
-                    document.getElementById(`nav-${state.activeView}`).classList.add('active');
+            if (state.isLoggedIn && state.authReady) {
+                if (authSection) authSection.classList.add('hidden');
+                if (mainContent) mainContent.classList.remove('hidden');
 
-                    if (state.activeView === 'dashboard') renderDashboard();
-                    if (state.activeView === 'entry') renderEntryLog();
-                    if (state.activeView === 'reports') renderReportsView();
-                    if (state.activeView === 'download') renderDownloadReportsView();
+                views.forEach(view => view.classList.remove('active'));
+                navLinks.forEach(link => link.classList.remove('active'));
 
+                document.getElementById(`view-${state.activeView}`).classList.add('active');
+                document.getElementById(`nav-${state.activeView}`).classList.add('active');
+
+                if (userIdDisplay && state.currentUser) {
+                    userIdDisplay.textContent = `User ID: ${state.currentUser.uid}`;
+                }
+
+                if (state.activeView === 'dashboard') renderDashboard();
+                if (state.activeView === 'entry') renderEntryLog();
+                if (state.activeView === 'reports') renderReportsView();
+                if (state.activeView === 'download') renderDownloadReportsView();
+
+            } else if (state.authReady) { // Auth is ready, but not logged in
+                if (authSection) authSection.classList.remove('hidden');
+                if (mainContent) mainContent.classList.add('hidden');
+            }
+        }
+
+        // --- Firebase Auth State Listener ---
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                state.isLoggedIn = true;
+                state.currentUser = user;
+                localStorage.setItem('isLoggedIn', 'true'); // Persist login state
+                
+                // Set up Firestore listener for this user's data
+                const userDailyLogsCollectionRef = collection(db, `artifacts/${appId}/users/${user.uid}/dailyLogs`);
+                onSnapshot(userDailyLogsCollectionRef, (snapshot) => {
+                    state.dbData = [];
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        // Ensure data has all required fields for processing, or set defaults
+                        state.dbData.push(processData({
+                            date: data.date,
+                            maizePurchased: data.maizePurchased || 0,
+                            maizeUnitPrice: data.maizeUnitPrice || 0,
+                            flourProduced: data.flourProduced || 0,
+                            flourSold: data.flourSold || 0,
+                            flourPrice: data.flourPrice || 0,
+                            branSold: data.branSold || 0,
+                            branPrice: data.branPrice || 0,
+                            id: doc.id // Store document ID for potential future use (e.g., editing/deleting)
+                        }));
+                    });
+                    state.dbData.sort((a,b) => new Date(b.date) - new Date(a.date)); // Sort in memory
+                    updateUI(); // Re-render UI with new data
+                }, (error) => {
+                    console.error("Error fetching Firestore data:", error);
+                });
+
+            } else {
+                state.isLoggedIn = false;
+                state.currentUser = null;
+                localStorage.removeItem('isLoggedIn');
+                state.dbData = []; // Clear data if logged out
+            }
+            state.authReady = true; // Firebase Auth state has been determined
+            updateUI();
+        });
+
+        // Initial anonymous sign-in or custom token sign-in
+        async function initializeAuth() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
-                    if (loginSection) loginSection.classList.remove('hidden');
-                    if (mainContent) mainContent.classList.add('hidden');
+                    // For local development or environments without custom token
+                    if (!auth.currentUser) { // Only sign in anonymously if not already authenticated
+                        await signInAnonymously(auth);
+                    }
+                }
+            } catch (error) {
+                console.error("Firebase auth initialization error:", error);
+                // Fallback to anonymous if custom token fails (e.g., expired)
+                if (!auth.currentUser) {
+                     await signInAnonymously(auth);
                 }
             }
+        }
+        initializeAuth();
 
-            function renderDashboard() {
-                const today = new Date('2025-06-26T00:00:00'); 
-                const currentMonth = today.getMonth();
-                const currentYear = today.getFullYear();
 
-                const todayData = state.db.find(d => new Date(d.date).toDateString() === today.toDateString());
-                
-                const kpiTodayProfit = document.getElementById('kpi-today-profit');
-                if (kpiTodayProfit) {
-                    kpiTodayProfit.textContent = todayData ? formatCurrency(todayData.profit) : formatCurrency(0);
-                }
+        function renderDashboard() {
+            const today = new Date('2025-06-26T00:00:00'); // Example fixed date for demo purposes
+            const currentMonth = today.getMonth();
+            const currentYear = today.getFullYear();
 
-                const monthData = state.db.filter(d => new Date(d.date).getMonth() === currentMonth && new Date(d.date).getFullYear() === currentYear);
-                const monthSales = monthData.reduce((sum, d) => sum + d.totalRevenue, 0);
-                const monthProfit = monthData.reduce((sum, d) => sum + d.profit, 0);
-                const monthMaizeMilledKg = monthData.reduce((sum, d) => sum + d.maizeMilled, 0);
-                const monthMaizeMilledTonnes = (monthMaizeMilledKg / 1000).toFixed(2); 
+            const todayData = state.dbData.find(d => new Date(d.date).toDateString() === today.toDateString());
+            
+            const kpiTodayProfit = document.getElementById('kpi-today-profit');
+            if (kpiTodayProfit) {
+                kpiTodayProfit.textContent = todayData ? formatCurrency(todayData.profit) : formatCurrency(0);
+            }
 
-                const kpiMonthSales = document.getElementById('kpi-month-sales');
-                if (kpiMonthSales) {
-                    kpiMonthSales.textContent = formatCurrency(monthSales);
-                }
-                const kpiMonthProfit = document.getElementById('kpi-month-profit');
-                if (kpiMonthProfit) {
-                    kpiMonthProfit.textContent = formatCurrency(monthProfit);
-                }
-                const kpiMonthMilledTonnes = document.getElementById('kpi-month-milled-tonnes');
-                if (kpiMonthMilledTonnes) {
-                    kpiMonthMilledTonnes.textContent = `${monthMaizeMilledTonnes} Tonnes`;
-                }
-                
-                const yearData = state.db.filter(d => new Date(d.date).getFullYear() === currentYear);
-                const yearProfit = yearData.reduce((sum, d) => sum + d.profit, 0);
-                const kpiYearProfit = document.getElementById('kpi-year-profit');
-                if (kpiYearProfit) {
-                    kpiYearProfit.textContent = formatCurrency(yearProfit);
-                }
-                
-                renderMonthlyProfitChart(currentYear);
-                renderRevenueSourceChart(yearData);
+            const monthData = state.dbData.filter(d => new Date(d.date).getMonth() === currentMonth && new Date(d.date).getFullYear() === currentYear);
+            const monthSales = monthData.reduce((sum, d) => sum + d.totalRevenue, 0);
+            const monthProfit = monthData.reduce((sum, d) => sum + d.profit, 0);
+            const monthMaizeMilledKg = monthData.reduce((sum, d) => sum + d.maizeMilled, 0);
+            const monthMaizeMilledTonnes = (monthMaizeMilledKg / 1000).toFixed(2); 
+
+            const kpiMonthSales = document.getElementById('kpi-month-sales');
+            if (kpiMonthSales) {
+                kpiMonthSales.textContent = formatCurrency(monthSales);
+            }
+            const kpiMonthProfit = document.getElementById('kpi-month-profit');
+            if (kpiMonthProfit) {
+                kpiMonthProfit.textContent = formatCurrency(monthProfit);
+            }
+            const kpiMonthMilledTonnes = document.getElementById('kpi-month-milled-tonnes');
+            if (kpiMonthMilledTonnes) {
+                kpiMonthMilledTonnes.textContent = `${monthMaizeMilledTonnes} Tonnes`;
             }
             
-            const chartDefaultOptions = {
-                maintainAspectRatio: false,
-                plugins: { legend: { position: 'bottom' } },
-                scales: {
-                    y: { beginAtZero: true, ticks: { callback: (value) => new Intl.NumberFormat('en-US', { notation: "compact", compactDisplay: "short" }).format(value) } },
-                    x: { grid: { display: false } }
-                }
-            };
+            const yearData = state.dbData.filter(d => new Date(d.date).getFullYear() === currentYear);
+            const yearProfit = yearData.reduce((sum, d) => sum + d.profit, 0);
+            const kpiYearProfit = document.getElementById('kpi-year-profit');
+            if (kpiYearProfit) {
+                kpiYearProfit.textContent = formatCurrency(yearProfit);
+            }
+            
+            renderMonthlyProfitChart(currentYear);
+            renderRevenueSourceChart(yearData);
+        }
+        
+        const chartDefaultOptions = {
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } },
+            scales: {
+                y: { beginAtZero: true, ticks: { callback: (value) => new Intl.NumberFormat('en-US', { notation: "compact", compactDisplay: "short" }).format(value) } },
+                x: { grid: { display: false } }
+            }
+        };
 
-            function renderMonthlyProfitChart(year) {
-                const ctx = document.getElementById('monthlyProfitChart').getContext('2d');
-                if (state.charts.monthlyProfit) state.charts.monthlyProfit.destroy();
+        function renderMonthlyProfitChart(year) {
+            const ctx = document.getElementById('monthlyProfitChart');
+            if (!ctx) return;
+            const chartCtx = ctx.getContext('2d');
+            if (state.charts.monthlyProfit) state.charts.monthlyProfit.destroy();
+            
+            const months = Array.from({length: 12}, (_, i) => new Date(0, i).toLocaleString('en-US', {month: 'short'}));
+            const monthlyProfits = months.map((_, i) => {
+                return state.dbData
+                    .filter(d => new Date(d.date).getFullYear() === year && new Date(d.date).getMonth() === i)
+                    .reduce((sum, d) => sum + d.profit, 0);
+            });
+
+            state.charts.monthlyProfit = new Chart(chartCtx, {
+                type: 'bar',
+                data: {
+                    labels: months,
+                    datasets: [{
+                        label: `Monthly Profit ${year}`,
+                        data: monthlyProfits,
+                        backgroundColor: '#4A90E2',
+                        borderRadius: 4
+                    }]
+                },
+                options: chartDefaultOptions
+            });
+        }
+
+        function renderRevenueSourceChart(data) {
+            const ctx = document.getElementById('revenueSourceChart');
+            if (!ctx) return;
+            const chartCtx = ctx.getContext('2d');
+            if (state.charts.revenueSource) state.charts.revenueSource.destroy();
+            
+            const totalFlourRevenue = data.reduce((sum, d) => sum + d.flourRevenue, 0);
+            const totalBranRevenue = data.reduce((sum, d) => sum + d.branRevenue, 0);
+
+            state.charts.revenueSource = new Chart(chartCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Maize Flour', 'Maize Bran'],
+                    datasets: [{
+                        data: [totalFlourRevenue, totalBranRevenue],
+                        backgroundColor: ['#4A90E2', '#50E3C2'],
+                        borderColor: '#F0F4F8',
+                        borderWidth: 4
+                    }]
+                },
+                options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            });
+        }
+
+        function renderEntryLog() {
+            const tableBody = document.getElementById('log-table-body');
+            if (tableBody) {
+                tableBody.innerHTML = state.dbData.slice(0, 10).map(d => `
+                    <tr class="bg-white border-b">
+                        <td class="px-6 py-4">${d.date}</td>
+                        <td class="px-6 py-4">${d.maizePurchased.toFixed(2)}</td>
+                        <td class="px-6 py-4">${formatCurrency(d.totalRevenue)}</td>
+                        <td class="px-6 py-4 font-medium ${d.profit > 0 ? 'text-green-600' : 'text-red-600'}">${formatCurrency(d.profit)}</td>
+                    </tr>
+                `).join('');
+            }
+            const dateInput = document.getElementById('date');
+            if (dateInput) {
+                dateInput.valueAsDate = new Date();
+            }
+        }
+
+        function renderReportsView() {
+            const yearSelect = document.getElementById('report-year');
+            const monthSelect = document.getElementById('report-month');
+
+            if (!yearSelect || !monthSelect) {
+                return; 
+            }
+
+            const years = [...new Set(state.dbData.map(d => new Date(d.date).getFullYear()))].sort((a, b) => b - a);
+            yearSelect.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+            const months = Array.from({length: 12}, (_, i) => new Date(0, i).toLocaleString('en-US', {month: 'long'}));
+            monthSelect.innerHTML = '<option value="all">All Year</option>' + months.map((m, i) => `<option value="${i}">${m}</option>`).join('');
+
+            const handleReportGeneration = () => {
+                const year = parseInt(yearSelect.value);
+                const month = monthSelect.value === 'all' ? 'all' : parseInt(monthSelect.value);
                 
-                const months = Array.from({length: 12}, (_, i) => new Date(0, i).toLocaleString('en-US', {month: 'short'}));
-                const monthlyProfits = months.map((_, i) => {
-                    return state.db
-                        .filter(d => new Date(d.date).getFullYear() === year && new Date(d.date).getMonth() === i)
-                        .reduce((sum, d) => sum + d.profit, 0);
-                });
-
-                state.charts.monthlyProfit = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: months,
-                        datasets: [{
-                            label: `Monthly Profit ${year}`,
-                            data: monthlyProfits,
-                            backgroundColor: '#4A90E2',
-                            borderRadius: 4
-                        }]
-                    },
-                    options: chartDefaultOptions
-                });
-            }
-
-            function renderRevenueSourceChart(data) {
-                const ctx = document.getElementById('revenueSourceChart').getContext('2d');
-                if (state.charts.revenueSource) state.charts.revenueSource.destroy();
+                let reportData = state.dbData.filter(d => new Date(d.date).getFullYear() === year);
+                if (month !== 'all') {
+                    reportData = reportData.filter(d => new Date(d.date).getMonth() === month);
+                }
                 
-                const totalFlourRevenue = data.reduce((sum, d) => sum + d.flourRevenue, 0);
-                const totalBranRevenue = data.reduce((sum, d) => sum + d.branRevenue, 0);
-
-                state.charts.revenueSource = new Chart(ctx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Maize Flour', 'Maize Bran'],
-                        datasets: [{
-                            data: [totalFlourRevenue, totalBranRevenue],
-                            backgroundColor: ['#4A90E2', '#50E3C2'],
-                            borderColor: '#F0F4F8',
-                            borderWidth: 4
-                        }]
-                    },
-                    options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
-                });
-            }
-
-            function renderEntryLog() {
-                const tableBody = document.getElementById('log-table-body');
-                if (tableBody) {
-                    tableBody.innerHTML = state.db.slice(0, 10).map(d => `
-                        <tr class="bg-white border-b">
-                            <td class="px-6 py-4">${d.date}</td>
-                            <td class="px-6 py-4">${d.maizePurchased.toFixed(2)}</td>
-                            <td class="px-6 py-4">${formatCurrency(d.totalRevenue)}</td>
-                            <td class="px-6 py-4 font-medium ${d.profit > 0 ? 'text-green-600' : 'text-red-600'}">${formatCurrency(d.profit)}</td>
-                        </tr>
-                    `).join('');
-                }
-                const dateInput = document.getElementById('date');
-                if (dateInput) {
-                    dateInput.valueAsDate = new Date();
-                }
-            }
-
-            function renderReportsView() {
-                const yearSelect = document.getElementById('report-year');
-                const monthSelect = document.getElementById('report-month');
-
-                if (!yearSelect || !monthSelect) {
-                    return; 
-                }
-
-                const years = [...new Set(state.db.map(d => new Date(d.date).getFullYear()))].sort((a, b) => b - a);
-                yearSelect.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
-                const months = Array.from({length: 12}, (_, i) => new Date(0, i).toLocaleString('en-US', {month: 'long'}));
-                monthSelect.innerHTML = '<option value="all">All Year</option>' + months.map((m, i) => `<option value="${i}">${m}</option>`).join('');
-
-                const handleReportGeneration = () => {
-                    const year = parseInt(yearSelect.value);
-                    const month = monthSelect.value === 'all' ? 'all' : parseInt(monthSelect.value);
-                    
-                    let reportData = state.db.filter(d => new Date(d.date).getFullYear() === year);
-                    if (month !== 'all') {
-                        reportData = reportData.filter(d => new Date(d.date).getMonth() === month);
-                    }
-                    
-                    const reportOutput = document.getElementById('report-output');
-                    if (!reportOutput) {
-                        return;
-                    }
-
-                    if (reportData.length === 0) {
-                        reportOutput.innerHTML = `<p class="text-gray-500 text-center">No data available for the selected period.</p>`;
-                        return;
-                    }
-
-                    const totalPurchased = reportData.reduce((sum, d) => sum + d.maizePurchased, 0);
-                    const totalCost = reportData.reduce((sum, d) => sum + d.costMaize, 0); // Use the calculated total cost
-                    const totalFlour = reportData.reduce((sum, d) => sum + d.flourProduced, 0);
-                    const totalBran = reportData.reduce((sum, d) => sum + d.branProduced, 0);
-                    const totalRevenue = reportData.reduce((sum, d) => sum + d.totalRevenue, 0);
-                    const totalProfit = reportData.reduce((sum, d) => sum + d.profit, 0);
-                    const totalMaizeMilledKg = reportData.reduce((sum, d) => sum + d.maizeMilled, 0);
-                    const totalMaizeMilledTonnes = (totalMaizeMilledKg / 1000).toFixed(2);
-                    const avgMillingLoss = (totalFlour / (totalFlour + totalBran) || 0) * 100;
-                    
-                    reportOutput.innerHTML = `
-                        <h3 class="text-xl font-bold text-gray-800 mb-4">Report for ${month !== 'all' ? months[month] : ''} ${year}</h3>
-                        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                            <div class="p-4 bg-gray-50 rounded-lg"><p class="text-sm text-gray-500">Total Revenue</p><p class="text-lg font-bold">${formatCurrency(totalRevenue)}</p></div>
-                            <div class="p-4 bg-gray-50 rounded-lg"><p class="text-sm text-gray-500">Total Profit</p><p class="text-lg font-bold text-green-600">${formatCurrency(totalProfit)}</p></div>
-                            <div class="p-4 bg-gray-50 rounded-lg"><p class="text-sm text-gray-500">Total Maize Cost</p><p class="text-lg font-bold">${formatCurrency(totalCost)}</p></div>
-                            <div class="p-4 bg-gray-50 rounded-lg"><p class="text-sm text-gray-500">Maize Purchased</p><p class="text-lg font-bold">${totalPurchased.toFixed(2)} Kg</p></div>
-                            <div class="p-4 bg-gray-50 rounded-lg"><p class="text-sm text-gray-500">Flour Produced</p><p class="text-lg font-bold">${totalFlour.toFixed(2)} Kg</p></div>
-                            <div class="p-4 bg-gray-50 rounded-lg"><p class="text-sm text-gray-500">Maize Milled</p><p class="text-lg font-bold">${totalMaizeMilledTonnes} Tonnes</p></div>
-                            <div class="p-4 bg-gray-50 rounded-lg"><p class="text-sm text-gray-500">Avg Flour Yield</p><p class="text-lg font-bold">${avgMillingLoss.toFixed(1)}%</p></div>
-                        </div>
-                    `;
-                };
-
-                yearSelect.addEventListener('change', handleReportGeneration);
-                monthSelect.addEventListener('change', handleReportGeneration);
-                handleReportGeneration();
-            }
-
-            function renderDownloadReportsView() {
-                const downloadYearSelect = document.getElementById('download-year');
-                const downloadMonthSelect = document.getElementById('download-month');
-                const downloadButton = document.getElementById('download-button');
-                const downloadStatus = document.getElementById('download-status');
-
-                if (!downloadYearSelect || !downloadMonthSelect || !downloadButton || !downloadStatus) {
+                const reportOutput = document.getElementById('report-output');
+                if (!reportOutput) {
                     return;
                 }
 
-                const years = [...new Set(state.db.map(d => new Date(d.date).getFullYear()))].sort((a, b) => b - a);
-                downloadYearSelect.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
-                const months = Array.from({length: 12}, (_, i) => new Date(0, i).toLocaleString('en-US', {month: 'long'}));
-                downloadMonthSelect.innerHTML = '<option value="all">All Months</option>' + months.map((m, i) => `<option value="${i}">${m}</option>`).join('');
+                if (reportData.length === 0) {
+                    reportOutput.innerHTML = `<p class="text-gray-500 text-center">No data available for the selected period.</p>`;
+                    return;
+                }
 
-                downloadButton.onclick = () => {
-                    const reportType = document.getElementById('download-report-type').value;
-                    const selectedYear = parseInt(downloadYearSelect.value);
-                    const selectedMonth = downloadMonthSelect.value === 'all' ? 'all' : parseInt(downloadMonthSelect.value);
+                const totalPurchased = reportData.reduce((sum, d) => sum + d.maizePurchased, 0);
+                const totalCost = reportData.reduce((sum, d) => sum + d.costMaize, 0);
+                const totalFlour = reportData.reduce((sum, d) => sum + d.flourProduced, 0);
+                const totalBran = reportData.reduce((sum, d) => sum + d.branProduced, 0);
+                const totalRevenue = reportData.reduce((sum, d) => sum + d.totalRevenue, 0);
+                const totalProfit = reportData.reduce((sum, d) => sum + d.profit, 0);
+                const totalMaizeMilledKg = reportData.reduce((sum, d) => sum + d.maizeMilled, 0);
+                const totalMaizeMilledTonnes = (totalMaizeMilledKg / 1000).toFixed(2);
+                const avgMillingLoss = (totalFlour / (totalFlour + totalBran) || 0) * 100;
+                
+                reportOutput.innerHTML = `
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">Report for ${month !== 'all' ? months[month] : ''} ${year}</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <div class="p-4 bg-gray-50 rounded-lg"><p class="text-sm text-gray-500">Total Revenue</p><p class="text-lg font-bold">${formatCurrency(totalRevenue)}</p></div>
+                        <div class="p-4 bg-gray-50 rounded-lg"><p class="text-sm text-gray-500">Total Profit</p><p class="text-lg font-bold text-green-600">${formatCurrency(totalProfit)}</p></div>
+                        <div class="p-4 bg-gray-50 rounded-lg"><p class="text-sm text-gray-500">Total Maize Cost</p><p class="text-lg font-bold">${formatCurrency(totalCost)}</p></div>
+                        <div class="p-4 bg-gray-50 rounded-lg"><p class="text-sm text-gray-500">Maize Purchased</p><p class="text-lg font-bold">${totalPurchased.toFixed(2)} Kg</p></div>
+                        <div class="p-4 bg-gray-50 rounded-lg"><p class="text-sm text-gray-500">Flour Produced</p><p class="text-lg font-bold">${totalFlour.toFixed(2)} Kg</p></div>
+                        <div class="p-4 bg-gray-50 rounded-lg"><p class="text-sm text-gray-500">Maize Milled</p><p class="text-lg font-bold">${totalMaizeMilledTonnes} Tonnes</p></div>
+                        <div class="p-4 bg-gray-50 rounded-lg"><p class="text-sm text-gray-500">Avg Flour Yield</p><p class="text-lg font-bold">${avgMillingLoss.toFixed(1)}%</p></div>
+                    </div>
+                `;
+            };
+
+            yearSelect.addEventListener('change', handleReportGeneration);
+            monthSelect.addEventListener('change', handleReportGeneration);
+            handleReportGeneration();
+        }
+
+        function renderDownloadReportsView() {
+            const downloadYearSelect = document.getElementById('download-year');
+            const downloadMonthSelect = document.getElementById('download-month');
+            const downloadButton = document.getElementById('download-button');
+            const downloadStatus = document.getElementById('download-status');
+
+            if (!downloadYearSelect || !downloadMonthSelect || !downloadButton || !downloadStatus) {
+                return;
+            }
+
+            const years = [...new Set(state.dbData.map(d => new Date(d.date).getFullYear()))].sort((a, b) => b - a);
+            downloadYearSelect.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+            const months = Array.from({length: 12}, (_, i) => new Date(0, i).toLocaleString('en-US', {month: 'long'}));
+            downloadMonthSelect.innerHTML = '<option value="all">All Months</option>' + months.map((m, i) => `<option value="${i}">${m}</option>`).join('');
+
+            downloadButton.onclick = () => {
+                const reportType = document.getElementById('download-report-type').value;
+                const selectedYear = parseInt(downloadYearSelect.value);
+                const selectedMonth = downloadMonthSelect.value === 'all' ? 'all' : parseInt(downloadMonthSelect.value);
+                
+                let dataToDownload = [];
+                let filename = '';
+                let headers = [];
+
+                if (reportType === 'daily_log') {
+                    let filteredData = state.dbData.filter(d => new Date(d.date).getFullYear() === selectedYear);
+                    if (selectedMonth !== 'all') {
+                        filteredData = filteredData.filter(d => new Date(d.date).getMonth() === selectedMonth);
+                    }
                     
-                    let dataToDownload = [];
-                    let filename = '';
-                    let headers = [];
+                    headers = [
+                        "Date", "Fresh Maize Purchased (Kg)", "Unit Price of Fresh Maize (UGX/Kg)", "Cost of Fresh Maize (UGX)",
+                        "Maize Milled (Kg)", "Expected Maize Flour (Kg)", "Actual Maize Flour Produced (Kg)",
+                        "Milling Loss (Kg)", "Maize Bran Produced (Kg)", "Sales of Maize Flour (Kg)",
+                        "Unit Price of Maize Flour (UGX/Kg)", "Sales Revenue - Maize Flour (UGX)",
+                        "Sales of Maize Bran (Kg)", "Unit Price of Maize Bran (UGX/Kg)",
+                        "Sales Revenue - Maize Bran (UGX)", "Total Daily Sales Revenue (UGX)",
+                        "Daily Profit/Loss (UGX)"
+                    ];
 
-                    if (reportType === 'daily_log') {
-                        let filteredData = state.db.filter(d => new Date(d.date).getFullYear() === selectedYear);
-                        if (selectedMonth !== 'all') {
-                            filteredData = filteredData.filter(d => new Date(d.date).getMonth() === selectedMonth);
-                        }
-                        
-                        headers = [
-                            "Date", "Fresh Maize Purchased (Kg)", "Unit Price of Fresh Maize (UGX/Kg)", "Cost of Fresh Maize (UGX)",
-                            "Maize Milled (Kg)", "Expected Maize Flour (Kg)", "Actual Maize Flour Produced (Kg)",
-                            "Milling Loss (Kg)", "Maize Bran Produced (Kg)", "Sales of Maize Flour (Kg)",
-                            "Unit Price of Maize Flour (UGX/Kg)", "Sales Revenue - Maize Flour (UGX)",
-                            "Sales of Maize Bran (Kg)", "Unit Price of Maize Bran (UGX/Kg)",
-                            "Sales Revenue - Maize Bran (UGX)", "Total Daily Sales Revenue (UGX)",
-                            "Daily Profit/Loss (UGX)"
-                        ];
+                    dataToDownload = filteredData.map(row => [
+                        row.date, row.maizePurchased, row.maizeUnitPrice, row.costMaize,
+                        row.maizeMilled, (row.maizeMilled * 0.70).toFixed(2), row.flourProduced,
+                        (row.maizeMilled - (row.flourProduced + row.branProduced)).toFixed(2),
+                        row.branProduced, row.flourSold,
+                        row.flourPrice, row.flourRevenue,
+                        row.branSold, row.branPrice,
+                        row.branRevenue, row.totalRevenue,
+                        row.profit
+                    ]);
+                    filename = `daily_log_${selectedYear}${selectedMonth !== 'all' ? `_${months[selectedMonth].toLowerCase()}` : '_all'}.csv`;
+                }
+                
+                if (dataToDownload.length === 0) {
+                    downloadStatus.textContent = "No data to download for the selected criteria.";
+                    return;
+                }
 
-                        dataToDownload = filteredData.map(row => [
-                            row.date, row.maizePurchased, row.maizeUnitPrice, row.costMaize, // Added maizeUnitPrice
-                            row.maizeMilled, (row.maizeMilled * 0.70).toFixed(2), row.flourProduced,
-                            (row.maizeMilled - (row.flourProduced + row.branProduced)).toFixed(2),
-                            row.branProduced, row.flourSold,
-                            row.flourPrice, row.flourRevenue,
-                            row.branSold, row.branPrice,
-                            row.branRevenue, row.totalRevenue,
-                            row.profit
-                        ]);
-                        filename = `daily_log_${selectedYear}${selectedMonth !== 'all' ? `_${months[selectedMonth].toLowerCase()}` : '_all'}.csv`;
-                    }
-                    // Add logic for 'monthly_summary' or 'annual_summary' here in the future
-                    // else if (reportType === 'monthly_summary') { ... }
+                const csvContent = [
+                    headers.map(header => `"${header}"`).join(','),
+                    ...dataToDownload.map(row => row.map(item => `"${item}"`).join(','))
+                ].join('\n');
 
-                    if (dataToDownload.length === 0) {
-                        downloadStatus.textContent = "No data to download for the selected criteria.";
-                        return;
-                    }
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.setAttribute('href', url);
+                link.setAttribute('download', filename);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                downloadStatus.textContent = `"${filename}" downloaded successfully!`;
+            };
+        }
 
-                    const csvContent = [
-                        headers.map(header => `"${header}"`).join(','),
-                        ...dataToDownload.map(row => row.map(item => `"${item}"`).join(','))
-                    ].join('\n');
+        // --- Authentication Form Logic ---
+        const authForm = document.getElementById('auth-form');
+        const authTitle = document.getElementById('auth-title');
+        const authSubmitButton = document.getElementById('auth-submit-button');
+        const toggleAuthModeButton = document.getElementById('toggle-auth-mode');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('auth-password');
+        const authErrorMessage = document.getElementById('auth-error-message');
+        const emailVerificationMessage = document.getElementById('email-verification-message');
 
-                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                    const url = URL.createObjectURL(blob);
-                    const link = document.createElement('a');
-                    link.setAttribute('href', url);
-                    link.setAttribute('download', filename);
-                    link.style.visibility = 'hidden';
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    URL.revokeObjectURL(url);
-                    downloadStatus.textContent = `"${filename}" downloaded successfully!`;
-                };
-            }
+        let isSignUpMode = false;
 
-            // Login Logic
-            const loginForm = document.getElementById('login-form');
-            if (loginForm) {
-                loginForm.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    const usernameInput = document.getElementById('username').value;
-                    const passwordInput = document.getElementById('password').value;
-                    const errorMessage = document.getElementById('login-error-message');
-
-                    if (usernameInput === VALID_USERNAME && passwordInput === VALID_PASSWORD) {
-                        state.isLoggedIn = true;
-                        localStorage.setItem('isLoggedIn', 'true');
-                        updateUI();
-                    } else {
-                        if (errorMessage) errorMessage.classList.remove('hidden');
-                    }
-                });
-            }
-
-            const logoutButton = document.getElementById('logout-button');
-            if (logoutButton) {
-                logoutButton.addEventListener('click', () => {
-                    state.isLoggedIn = false;
-                    localStorage.removeItem('isLoggedIn');
-                    updateUI();
-                });
-            }
-
-            document.getElementById('daily-entry-form').addEventListener('submit', (e) => {
+        if (authForm) {
+            authForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const newEntry = {
-                    date: e.target.elements['date'].value,
-                    maizePurchased: parseFloat(e.target.elements['maize-purchased'].value),
-                    maizeUnitPrice: parseFloat(e.target.elements['maize-unit-price'].value), // Get unit price
-                    flourProduced: parseFloat(e.target.elements['flour-produced'].value),
-                    flourSold: parseFloat(e.target.elements['flour-sold'].value),
-                    flourPrice: parseFloat(e.target.elements['flour-price'].value),
-                    branSold: parseFloat(e.target.elements['bran-sold'].value),
-                    branPrice: parseFloat(e.target.elements['bran-price'].value)
-                };
-                
-                state.db.push(processData(newEntry));
-                state.db.sort((a,b) => new Date(b.date) - new Date(a.date));
+                authErrorMessage.classList.add('hidden');
+                emailVerificationMessage.classList.add('hidden');
+
+                const email = emailInput.value;
+                const password = passwordInput.value;
+
+                try {
+                    if (isSignUpMode) {
+                        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                        await sendEmailVerification(userCredential.user);
+                        emailVerificationMessage.textContent = 'Verification email sent! Please check your inbox and verify your email to log in.';
+                        emailVerificationMessage.classList.remove('hidden');
+                        alert('Account created! Please verify your email to log in.');
+                        // Switch back to login mode after successful signup and verification email sent
+                        isSignUpMode = false; 
+                        authTitle.textContent = 'Staff Login';
+                        authSubmitButton.textContent = 'Login';
+                        toggleAuthModeButton.textContent = "Don't have an account? Sign Up";
+                    } else {
+                        await signInWithEmailAndPassword(auth, email, password);
+                        // onAuthStateChanged listener handles UI update upon successful login
+                    }
+                } catch (error) {
+                    let errorMessage = 'An unknown error occurred.';
+                    switch (error.code) {
+                        case 'auth/user-not-found':
+                        case 'auth/wrong-password':
+                        case 'auth/invalid-credential': // More generic for newer Firebase versions
+                            errorMessage = 'Invalid email or password.';
+                            break;
+                        case 'auth/email-already-in-use':
+                            errorMessage = 'This email is already registered. Try logging in.';
+                            break;
+                        case 'auth/weak-password':
+                            errorMessage = 'Password is too weak. Must be at least 6 characters.';
+                            break;
+                        case 'auth/invalid-email':
+                            errorMessage = 'Invalid email format.';
+                            break;
+                        case 'auth/network-request-failed':
+                            errorMessage = 'Network error. Please check your internet connection.';
+                            break;
+                        default:
+                            errorMessage = `Authentication error: ${error.message}`;
+                            console.error("Firebase Auth Error:", error.code, error.message);
+                    }
+                    if (authErrorMessage) {
+                        authErrorMessage.textContent = errorMessage;
+                        authErrorMessage.classList.remove('hidden');
+                    }
+                }
+            });
+
+            if (toggleAuthModeButton) {
+                toggleAuthModeButton.addEventListener('click', () => {
+                    isSignUpMode = !isSignUpMode;
+                    authTitle.textContent = isSignUpMode ? 'Staff Sign Up' : 'Staff Login';
+                    authSubmitButton.textContent = isSignUpMode ? 'Sign Up' : 'Login';
+                    toggleAuthModeButton.textContent = isSignUpMode ? 'Already have an account? Login' : "Don't have an account? Sign Up";
+                    authErrorMessage.classList.add('hidden'); // Clear error message on mode switch
+                    emailVerificationMessage.classList.add('hidden');
+                });
+            }
+        }
+
+        const logoutButton = document.getElementById('logout-button');
+        if (logoutButton) {
+            logoutButton.addEventListener('click', async () => {
+                try {
+                    await signOut(auth);
+                    state.activeView = 'dashboard'; // Reset view to dashboard on logout
+                    updateUI(); // This will trigger the login screen display
+                    alert('You have been logged out.');
+                } catch (error) {
+                    console.error("Logout error:", error);
+                    alert('Error logging out. Please try again.');
+                }
+            });
+        }
+
+        document.getElementById('daily-entry-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!state.currentUser) {
+                alert('Please log in to add data.');
+                return;
+            }
+
+            const newEntry = {
+                date: e.target.elements['date'].value,
+                maizePurchased: parseFloat(e.target.elements['maize-purchased'].value),
+                maizeUnitPrice: parseFloat(e.target.elements['maize-unit-price'].value),
+                flourProduced: parseFloat(e.target.elements['flour-produced'].value),
+                flourSold: parseFloat(e.target.elements['flour-sold'].value),
+                flourPrice: parseFloat(e.target.elements['flour-price'].value),
+                branSold: parseFloat(e.target.elements['bran-sold'].value),
+                branPrice: parseFloat(e.target.elements['bran-price'].value),
+                timestamp: serverTimestamp() // Add server timestamp for consistent ordering
+            };
+            
+            try {
+                await addDoc(collection(db, `artifacts/${appId}/users/${state.currentUser.uid}/dailyLogs`), newEntry);
                 e.target.reset();
-                
                 const dateInput = document.getElementById('date');
                 if (dateInput) {
                     dateInput.valueAsDate = new Date();
                 }
-                
-                renderEntryLog();
                 alert('Log entry added successfully!');
-            });
-            
-            document.querySelector('nav').addEventListener('click', (e) => {
-                if (e.target.matches('.nav-link')) {
-                    const newView = e.target.id.split('-')[1];
-                    state.activeView = newView;
-                    updateUI();
-                }
-            });
-
-            updateUI();
+                // Data will automatically update via onSnapshot listener
+            } catch (error) {
+                console.error("Error adding document: ", error);
+                alert("Error adding log entry. Please try again.");
+            }
         });
+        
+        document.querySelector('nav').addEventListener('click', (e) => {
+            if (e.target.matches('.nav-link')) {
+                const newView = e.target.id.split('-')[1];
+                state.activeView = newView;
+                updateUI();
+            }
+        });
+    });
     </script>
 </body>
 </html>
