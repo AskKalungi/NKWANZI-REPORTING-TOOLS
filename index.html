@@ -236,6 +236,13 @@
         const state = {
             activeView: 'dashboard',
             charts: {},
+            initialDbData: [ // Renamed 'db' to 'initialDbData' to avoid confusion with Firestore db
+                    { date: '2025-06-01', maizePurchased: 500, maizeUnitPrice: 1200, flourProduced: 348, flourSold: 340, flourPrice: 2000, branSold: 150, branPrice: 500 },
+                    { date: '2025-06-02', maizePurchased: 520, maizeUnitPrice: 1200, flourProduced: 365, flourSold: 360, flourPrice: 2000, branSold: 155, branPrice: 500 },
+                    { date: '2025-06-03', maizePurchased: 480, maizeUnitPrice: 1200, flourProduced: 335, flourSold: 330, flourPrice: 2050, branSold: 140, branPrice: 520 },
+                    { date: '2025-05-20', maizePurchased: 600, maizeUnitPrice: 1200, flourProduced: 420, flourSold: 410, flourPrice: 2000, branSold: 175, branPrice: 500 },
+                    { date: '2025-04-15', maizePurchased: 550, maizeUnitPrice: 1200, flourProduced: 385, flourSold: 380, flourPrice: 1950, branSold: 160, branPrice: 480 },
+                ],
             dbData: [], // This will now hold data fetched from Firestore
             isLoggedIn: false, // Initial state, determined by Firebase Auth
             currentUser: null,
@@ -252,6 +259,10 @@
             const profit = totalRevenue - costMaize;
             return { ...entry, costMaize, maizeMilled, branProduced, flourRevenue, branRevenue, totalRevenue, profit };
         };
+
+        // Initially process any local demo data (only for display before Firestore loads)
+        // state.dbData = state.initialDbData.map(processData).sort((a,b) => new Date(b.date) - new Date(a.date));
+        // Remove this line to ensure data is only from Firestore
 
         const formatCurrency = (value) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'UGX', minimumFractionDigits: 0 }).format(value);
 
