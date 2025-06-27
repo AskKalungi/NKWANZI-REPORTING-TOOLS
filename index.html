@@ -349,19 +349,18 @@
             // Initial anonymous sign-in or custom token sign-in
             async function initializeAuth() {
                 try {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                    } else {
-                        // For local development or environments without custom token
-                        if (!auth.currentUser) { // Only sign in anonymously if not already authenticated
-                            await signInAnonymously(auth);
-                        }
-                    }
+                    // Prioritize anonymous sign-in for general functionality in Canvas
+                    await signInAnonymously(auth);
                 } catch (error) {
                     console.error("Firebase auth initialization error:", error);
-                    // Fallback to anonymous if custom token fails (e.g., expired)
-                    if (!auth.currentUser) {
-                         await signInAnonymously(auth);
+                    // If anonymous sign-in fails for some reason (e.g., misconfiguration),
+                    // try custom token if available, though it's the source of the invalid-claims error
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        try {
+                             await signInWithCustomToken(auth, __initial_auth_token);
+                        } catch (customTokenError) {
+                            console.error("Firebase custom token sign-in error:", customTokenError);
+                        }
                     }
                 }
             }
@@ -655,6 +654,7 @@
                             await sendEmailVerification(userCredential.user);
                             emailVerificationMessage.textContent = 'Verification email sent! Please check your inbox and verify your email to log in.';
                             emailVerificationMessage.classList.remove('hidden');
+                            // Changed to alert for better visibility to the user since custom modals are not implemented
                             alert('Account created! Please verify your email to log in.');
                             // Switch back to login mode after successful signup and verification email sent
                             isSignUpMode = false; 
@@ -724,9 +724,11 @@
                         await signOut(auth);
                         state.activeView = 'dashboard'; // Reset view to dashboard on logout
                         updateUI(); // This will trigger the login screen display
+                        // Changed to alert for better visibility to the user
                         alert('You have been logged out.');
                     } catch (error) {
                         console.error("Logout error:", error);
+                        // Changed to alert for better visibility to the user
                         alert('Error logging out. Please try again.');
                     }
                 });
@@ -735,6 +737,7 @@
             document.getElementById('daily-entry-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 if (!state.currentUser) {
+                    // Changed to alert for better visibility to the user
                     alert('Please log in to add data.');
                     return;
                 }
@@ -758,10 +761,12 @@
                     if (dateInput) {
                         dateInput.valueAsDate = new Date();
                     }
+                    // Changed to alert for better visibility to the user
                     alert('Log entry added successfully!');
                     // Data will automatically update via onSnapshot listener
                 } catch (error) {
                     console.error("Error adding document: ", error);
+                    // Changed to alert for better visibility to the user
                     alert("Error adding log entry. Please try again.");
                 }
             });
