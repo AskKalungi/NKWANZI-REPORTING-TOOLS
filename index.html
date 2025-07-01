@@ -8,8 +8,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <!-- Chosen Palette: Calm & Assuring -->
-    <!-- Application Structure Plan: The SPA is structured with a tab-based navigation to separate core user tasks: Dashboard Overview, Daily Data Entry, Detailed Reports, and Download Reports. A robust login and sign-up system using Firebase Authentication is implemented, gating access to the main content. All operational data is now persistently stored and retrieved from Firebase Firestore, ensuring data integrity and multi-staff access. -->
-    <!-- Visualization & Content Choices: Report Info -> Goal -> Viz/Presentation Method -> Interaction -> Justification -> Library/Method. 1. Key Metrics (Today's Profit, MTD Sales) -> Inform -> Large Number KPIs -> Instant read -> Provides immediate business health status. 2. Monthly Profit -> Change -> Bar Chart -> Hover for details -> Compares discrete time periods effectively (Chart.js/Canvas). 3. Production & Revenue Mix -> Compare -> Donut Charts -> Hover for percentages -> Ideal for showing part-to-whole composition (Chart.js/Canvas). 4. Daily Operations -> Organize -> HTML Form & Table -> Form submission and display uses Firebase Firestore -> Standard, intuitive method for data entry and real-time review. 5. Downloadable Reports -> Inform/Organize -> Form with Download Button (data from Firestore) -> User selection of report type and period leads to CSV download -> Provides data portability and offline analysis. 6. Login/Signup Page -> Secure Access -> Forms with input fields and buttons -> Firebase Auth handles email/password login, account creation, and email verification. A 'show password' toggle is added for improved usability. -->
+    <!-- Application Structure Plan: The SPA is structured with a tab-based navigation to separate core user tasks: Dashboard Overview, Daily Data Entry, Detailed Reports, and Download Reports. Data is persistently stored and retrieved from Firebase Firestore. -->
+    <!-- Visualization & Content Choices: Report Info -> Goal -> Viz/Presentation Method -> Interaction -> Justification -> Library/Method. 1. Key Metrics (Today's Profit, MTD Sales) -> Inform -> Large Number KPIs -> Instant read -> Provides immediate business health status. 2. Monthly Profit -> Change -> Bar Chart -> Hover for details -> Compares discrete time periods effectively (Chart.js/Canvas). 3. Production & Revenue Mix -> Compare -> Donut Charts -> Hover for percentages -> Ideal for showing part-to-whole composition (Chart.js/Canvas). 4. Daily Operations -> Organize -> HTML Form & Table -> Form submission and display uses Firebase Firestore -> Standard, intuitive method for data entry and real-time review. 5. Downloadable Reports -> Inform/Organize -> Form with Download Button (data from Firestore) -> User selection of report type and period leads to CSV download -> Provides data portability and offline analysis. -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #F0F4F8; }
@@ -20,59 +20,20 @@
         .kpi-card { background-color: white; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); padding: 1.5rem; text-align: center; }
         .content-section { display: none; }
         .content-section.active { display: block; }
-        #auth-section { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background-color: #E0E7ED; padding: 1rem; }
-        #auth-form-card { background-color: white; padding: 2rem; border-radius: 0.75rem; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); width: 100%; max-width: 400px; }
         .hidden { display: none; }
-        .password-input-container { position: relative; }
-        .toggle-password-visibility {
-            position: absolute;
-            right: 0.75rem;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: #6B7280;
-            font-size: 1.125rem; /* 18px */
-            padding: 0.25rem;
-        }
     </style>
 </head>
 <body>
 
-    <div id="auth-section">
-        <div id="auth-form-card">
-            <h2 class="text-3xl font-bold text-gray-800 text-center mb-6">NATIVE AGROFOODS UG</h2>
-            <p id="auth-title" class="text-center text-gray-600 mb-6">Staff Login</p>
-            <form id="auth-form" class="space-y-4">
-                <div>
-                    <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
-                    <input type="email" id="email" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                <div class="password-input-container">
-                    <label for="auth-password" class="block text-sm font-medium text-gray-700">Password</label>
-                    <input type="password" id="auth-password" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 pr-10 focus:ring-blue-500 focus:border-blue-500">
-                    <button type="button" id="toggle-password-visibility" class="toggle-password-visibility">👁️</button>
-                </div>
-                <div id="auth-error-message" class="text-red-600 text-sm text-center hidden"></div>
-                <div id="email-verification-message" class="text-green-600 text-sm text-center hidden">Verification email sent! Please check your inbox.</div>
-                <button type="submit" id="auth-submit-button" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 transition">Login</button>
-            </form>
-            <div class="mt-4 text-center">
-                <button id="toggle-auth-mode" class="text-blue-600 hover:underline text-sm">Don't have an account? Sign Up</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="main-content" class="hidden">
+    <div id="main-content">
         <header class="bg-white shadow-md">
             <div class="container mx-auto px-4 py-4 flex justify-between items-center">
                 <div>
                     <h1 class="text-3xl font-bold text-gray-800">NATIVE AGROFOODS UG</h1>
                     <p class="text-gray-500">Maize Milling Dashboard</p>
-                    <p id="user-id-display" class="text-sm text-gray-400 mt-1">User ID: Loading...</p>
+                    <!-- User ID display removed as there's no authenticated user -->
                 </div>
-                <button id="logout-button" class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition">Logout</button>
+                <!-- Logout button removed as there's no authentication -->
             </div>
             <nav class="border-b border-gray-200">
                 <div class="container mx-auto px-4 flex">
@@ -132,11 +93,21 @@
                             </div>
                             <div>
                                 <label for="maize-purchased" class="block text-sm font-medium text-gray-700">Fresh Maize Purchased (Kg)</label>
-                                <input type="number" step="0.01" id="maize-purchased" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2">
+                                <input type="number" step="0.01" id="maize-purchased" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2" value="0">
                             </div>
                             <div>
                                 <label for="maize-unit-price" class="block text-sm font-medium text-gray-700">Unit Price of Fresh Maize (UGX/Kg)</label>
-                                <input type="number" step="0.01" id="maize-unit-price" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2">
+                                <input type="number" step="0.01" id="maize-unit-price" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2" value="0">
+                            </div>
+                            <!-- New input for Walk-in Maize -->
+                            <div>
+                                <label for="walk-in-maize" class="block text-sm font-medium text-gray-700">Walk-in Maize (Kg)</label>
+                                <input type="number" step="0.01" id="walk-in-maize" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2" placeholder="Enter quantity for walk-in clients" value="0">
+                            </div>
+                            <!-- New input for Milling Price per Kg -->
+                            <div>
+                                <label for="milling-price-per-kg" class="block text-sm font-medium text-gray-700">Milling Price per Kg (UGX)</label>
+                                <input type="number" step="0.01" id="milling-price-per-kg" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2" placeholder="Price for milling walk-in maize" value="0">
                             </div>
                             <div>
                                 <label for="flour-produced" class="block text-sm font-medium text-gray-700">Actual Maize Flour Produced (Kg)</label>
@@ -212,7 +183,7 @@
                                 <option value="daily_log">Daily Operations Log (CSV)</option>
                                 <!-- Future report types could be added here -->
                                 <!-- <option value="monthly_summary">Monthly Summary (CSV)</option> -->
-                                <!-- <option value="annual_summary">Annual Summary (CSV)</option> -->
+                                <!-- <option value="annual_summary">Annual CSV)</option> -->
                             </select>
                         </div>
                         <div class="w-full md:w-auto">
@@ -236,8 +207,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
-        // Corrected import: added signInWithCustomToken
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, sendEmailVerification, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-auth.js";
+        // Only import necessary Firestore modules as Auth is removed
         import { getFirestore, collection, addDoc, query, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
 
         // Firebase config and app ID will be injected by the environment
@@ -247,124 +217,94 @@
         // Initialize Firebase on DOMContentLoaded
         document.addEventListener('DOMContentLoaded', () => {
             const app = initializeApp(firebaseConfig);
-            const auth = getAuth(app);
             const db = getFirestore(app);
 
             const state = {
                 activeView: 'dashboard',
                 charts: {},
                 dbData: [], // This will now hold data fetched from Firestore
-                isLoggedIn: false, // Initial state, determined by Firebase Auth
-                currentUser: null,
-                authReady: false // To track if Firebase auth state is initialized
+                // isLoggedIn and currentUser are no longer needed for a non-authenticated version
+                // authReady is also not needed as there's no auth process
             };
 
             const processData = (entry) => {
-                const maizeMilled = entry.maizePurchased;
-                const costMaize = entry.maizePurchased * entry.maizeUnitPrice;
-                const branProduced = maizeMilled * 0.3;
+                // maizeMilled now sums both purchased and walk-in maize
+                const maizeMilled = (entry.maizePurchased || 0) + (entry.walkInMaizeKg || 0);
+                const costMaize = entry.maizePurchased * entry.maizeUnitPrice; // Cost only applies to purchased maize
+                const branProduced = maizeMilled * 0.3; // Bran produced from total milled maize
                 const flourRevenue = entry.flourSold * entry.flourPrice;
+                // Calculate milling revenue from walk-in maize
+                const millingRevenue = (entry.walkInMaizeKg || 0) * (entry.millingPricePerKg || 0);
                 const branRevenue = entry.branSold * entry.branPrice;
-                const totalRevenue = flourRevenue + branRevenue;
+                const totalRevenue = flourRevenue + branRevenue + millingRevenue; // Include milling revenue
+                // Profit calculation now includes milling revenue
                 const profit = totalRevenue - costMaize;
-                return { ...entry, costMaize, maizeMilled, branProduced, flourRevenue, branRevenue, totalRevenue, profit };
+                return { ...entry, maizeMilled, costMaize, branProduced, flourRevenue, millingRevenue, branRevenue, totalRevenue, profit };
             };
 
             const formatCurrency = (value) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'UGX', minimumFractionDigits: 0 }).format(value);
 
             function updateUI() {
-                const authSection = document.getElementById('auth-section');
-                const mainContent = document.getElementById('main-content');
                 const views = document.querySelectorAll('.content-section');
                 const navLinks = document.querySelectorAll('.nav-link');
-                const userIdDisplay = document.getElementById('user-id-display');
 
-                if (state.isLoggedIn && state.authReady) {
-                    if (authSection) authSection.classList.add('hidden');
-                    if (mainContent) mainContent.classList.remove('hidden');
+                views.forEach(view => view.classList.remove('active'));
+                navLinks.forEach(link => link.classList.remove('active'));
 
-                    views.forEach(view => view.classList.remove('active'));
-                    navLinks.forEach(link => link.classList.remove('active'));
+                document.getElementById(`view-${state.activeView}`).classList.add('active');
+                document.getElementById(`nav-${state.activeView}`).classList.add('active');
 
-                    document.getElementById(`view-${state.activeView}`).classList.add('active');
-                    document.getElementById(`nav-${state.activeView}`).classList.add('active');
+                // No user ID display needed without authentication
 
-                    if (userIdDisplay && state.currentUser) {
-                        userIdDisplay.textContent = `User ID: ${state.currentUser.uid}`;
-                    }
-
-                    if (state.activeView === 'dashboard') renderDashboard();
-                    if (state.activeView === 'entry') renderEntryLog();
-                    if (state.activeView === 'reports') renderReportsView();
-                    if (state.activeView === 'download') renderDownloadReportsView();
-
-                } else if (state.authReady) { // Auth is ready, but not logged in
-                    if (authSection) authSection.classList.remove('hidden');
-                    if (mainContent) mainContent.classList.add('hidden');
-                }
+                if (state.activeView === 'dashboard') renderDashboard();
+                if (state.activeView === 'entry') renderEntryLog();
+                if (state.activeView === 'reports') renderReportsView();
+                if (state.activeView === 'download') renderDownloadReportsView();
             }
 
-            // --- Firebase Auth State Listener ---
-            onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    state.isLoggedIn = true;
-                    state.currentUser = user;
-                    localStorage.setItem('isLoggedIn', 'true'); // Persist login state
-                    
-                    // Set up Firestore listener for this user's data
-                    const userDailyLogsCollectionRef = collection(db, `artifacts/${appId}/users/${user.uid}/dailyLogs`);
-                    onSnapshot(userDailyLogsCollectionRef, (snapshot) => {
-                        state.dbData = [];
-                        snapshot.forEach(doc => {
-                            const data = doc.data();
-                            // Ensure data has all required fields for processing, or set defaults
-                            state.dbData.push(processData({
-                                date: data.date,
-                                maizePurchased: data.maizePurchased || 0,
-                                maizeUnitPrice: data.maizeUnitPrice || 0,
-                                flourProduced: data.flourProduced || 0,
-                                flourSold: data.flourSold || 0,
-                                flourPrice: data.flourPrice || 0,
-                                branSold: data.branSold || 0,
-                                branPrice: data.branPrice || 0,
-                                id: doc.id // Store document ID for potential future use (e.g., editing/deleting)
-                            }));
-                        });
-                        state.dbData.sort((a,b) => new Date(b.date) - new Date(a.date)); // Sort in memory
-                        updateUI(); // Re-render UI with new data
-                    }, (error) => {
-                        console.error("Error fetching Firestore data:", error);
-                    });
+            // --- Firestore Data Listener (for a default/public user) ---
+            // For a non-authenticated app, we'll use a fixed 'public' user ID
+            // In a real scenario, you might have public data or a single admin user.
+            const defaultUserId = 'public_user_id'; // You can change this to a specific ID if needed for public data
+            const publicDailyLogsCollectionRef = collection(db, `artifacts/${appId}/public/data/dailyLogs`); // Adjusted path for public data
 
-                } else {
-                    state.isLoggedIn = false;
-                    state.currentUser = null;
-                    localStorage.removeItem('isLoggedIn');
-                    state.dbData = []; // Clear data if logged out
+            // IMPORTANT: For this public data path to work, you MUST set your Firestore Security Rules
+            // to allow public read and write access to this specific collection.
+            // Go to Firebase Console -> Firestore Database -> Rules tab and add:
+            /*
+            rules_version = '2';
+            service cloud.firestore {
+              match /databases/{database}/documents {
+                match /artifacts/{appId}/public/data/dailyLogs/{document=**} {
+                  allow read, write: if true;
                 }
-                state.authReady = true; // Firebase Auth state has been determined
-                updateUI();
+              }
+            }
+            */
+            onSnapshot(publicDailyLogsCollectionRef, (snapshot) => {
+                state.dbData = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    // Ensure data has all required fields for processing, or set defaults
+                    state.dbData.push(processData({
+                        date: data.date,
+                        maizePurchased: data.maizePurchased || 0,
+                        maizeUnitPrice: data.maizeUnitPrice || 0,
+                        walkInMaizeKg: data.walkInMaizeKg || 0, // Include walk-in maize
+                        millingPricePerKg: data.millingPricePerKg || 0, // Include milling price
+                        flourProduced: data.flourProduced || 0,
+                        flourSold: data.flourSold || 0,
+                        flourPrice: data.flourPrice || 0,
+                        branSold: data.branSold || 0,
+                        branPrice: data.branPrice || 0,
+                        id: doc.id // Store document ID for potential future use (e.g., editing/deleting)
+                    }));
+                });
+                state.dbData.sort((a,b) => new Date(b.date) - new Date(a.date)); // Sort in memory
+                updateUI(); // Re-render UI with new data
+            }, (error) => {
+                console.error("Error fetching Firestore data:", error);
             });
-
-            // Initial anonymous sign-in or custom token sign-in
-            async function initializeAuth() {
-                try {
-                    // Prioritize anonymous sign-in for general functionality in Canvas
-                    await signInAnonymously(auth);
-                } catch (error) {
-                    console.error("Firebase auth initialization error:", error);
-                    // If anonymous sign-in fails for some reason (e.g., misconfiguration),
-                    // try custom token if available, though it's the source of the invalid-claims error
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        try {
-                             await signInWithCustomToken(auth, __initial_auth_token);
-                        } catch (customTokenError) {
-                            console.error("Firebase custom token sign-in error:", customTokenError);
-                        }
-                    }
-                }
-            }
-            initializeAuth();
 
 
             function renderDashboard() {
@@ -454,14 +394,15 @@
                 
                 const totalFlourRevenue = data.reduce((sum, d) => sum + d.flourRevenue, 0);
                 const totalBranRevenue = data.reduce((sum, d) => sum + d.branRevenue, 0);
+                const totalMillingRevenue = data.reduce((sum, d) => sum + d.millingRevenue, 0); // Sum milling revenue
 
                 state.charts.revenueSource = new Chart(chartCtx, {
                     type: 'doughnut',
                     data: {
-                        labels: ['Maize Flour', 'Maize Bran'],
+                        labels: ['Maize Flour Sales', 'Maize Bran Sales', 'Milling Services'], // Updated labels
                         datasets: [{
-                            data: [totalFlourRevenue, totalBranRevenue],
-                            backgroundColor: ['#4A90E2', '#50E3C2'],
+                            data: [totalFlourRevenue, totalBranRevenue, totalMillingRevenue], // Include milling revenue
+                            backgroundColor: ['#4A90E2', '#50E3C2', '#FFC107'], // Added a new color for milling
                             borderColor: '#F0F4F8',
                             borderWidth: 4
                         }]
@@ -476,7 +417,7 @@
                     tableBody.innerHTML = state.dbData.slice(0, 10).map(d => `
                         <tr class="bg-white border-b">
                             <td class="px-6 py-4">${d.date}</td>
-                            <td class="px-6 py-4">${d.maizePurchased.toFixed(2)}</td>
+                            <td class="px-6 py-4">${d.maizeMilled.toFixed(2)}</td> <!-- Display total maize in -->
                             <td class="px-6 py-4">${formatCurrency(d.totalRevenue)}</td>
                             <td class="px-6 py-4 font-medium ${d.profit > 0 ? 'text-green-600' : 'text-red-600'}">${formatCurrency(d.profit)}</td>
                         </tr>
@@ -521,12 +462,14 @@
                     }
 
                     const totalPurchased = reportData.reduce((sum, d) => sum + d.maizePurchased, 0);
+                    const totalWalkInMaize = reportData.reduce((sum, d) => sum + d.walkInMaizeKg, 0); // Sum walk-in maize
+                    const totalMillingRevenue = reportData.reduce((sum, d) => sum + d.millingRevenue, 0); // Sum milling revenue
                     const totalCost = reportData.reduce((sum, d) => sum + d.costMaize, 0);
                     const totalFlour = reportData.reduce((sum, d) => sum + d.flourProduced, 0);
                     const totalBran = reportData.reduce((sum, d) => sum + d.branProduced, 0);
                     const totalRevenue = reportData.reduce((sum, d) => sum + d.totalRevenue, 0);
                     const totalProfit = reportData.reduce((sum, d) => sum + d.profit, 0);
-                    const totalMaizeMilledKg = reportData.reduce((sum, d) => sum + d.maizeMilled, 0);
+                    const totalMaizeMilledKg = reportData.reduce((sum, d) => sum + d.maizeMilled, 0); // This already sums purchased + walk-in
                     const totalMaizeMilledTonnes = (totalMaizeMilledKg / 1000).toFixed(2);
                     const avgMillingLoss = (totalFlour / (totalFlour + totalBran) || 0) * 100;
                     
@@ -537,6 +480,8 @@
                             <div class="p-4 bg-gray-50 rounded-lg"><p class="text-sm text-gray-500">Total Profit</p><p class="text-lg font-bold text-green-600">${formatCurrency(totalProfit)}</p></div>
                             <div class="p-4 bg-gray-50 rounded-lg"><p class="text-sm text-gray-500">Total Maize Cost</p><p class="text-lg font-bold">${formatCurrency(totalCost)}</p></div>
                             <div class="p-4 bg-gray-50 rounded-lg"><p class="text-sm text-gray-500">Maize Purchased</p><p class="text-lg font-bold">${totalPurchased.toFixed(2)} Kg</p></div>
+                            <div class="p-4 bg-gray-50 rounded-lg"><p class="text-sm font-medium text-gray-700">Walk-in Maize</p><p class="text-lg font-bold">${totalWalkInMaize.toFixed(2)} Kg</p></div>
+                            <div class="p-4 bg-gray-50 rounded-lg"><p class="text-sm font-medium text-gray-700">Milling Revenue</p><p class="text-lg font-bold">${formatCurrency(totalMillingRevenue)}</p></div>
                             <div class="p-4 bg-gray-50 rounded-lg"><p class="text-sm text-gray-500">Flour Produced</p><p class="text-lg font-bold">${totalFlour.toFixed(2)} Kg</p></div>
                             <div class="p-4 bg-gray-50 rounded-lg"><p class="text-sm text-gray-500">Maize Milled</p><p class="text-lg font-bold">${totalMaizeMilledTonnes} Tonnes</p></div>
                             <div class="p-4 bg-gray-50 rounded-lg"><p class="text-sm text-gray-500">Avg Flour Yield</p><p class="text-lg font-bold">${avgMillingLoss.toFixed(1)}%</p></div>
@@ -581,6 +526,7 @@
                         
                         headers = [
                             "Date", "Fresh Maize Purchased (Kg)", "Unit Price of Fresh Maize (UGX/Kg)", "Cost of Fresh Maize (UGX)",
+                            "Walk-in Maize (Kg)", "Milling Price per Kg (UGX)", "Milling Revenue (UGX)", // New headers for walk-in maize
                             "Maize Milled (Kg)", "Expected Maize Flour (Kg)", "Actual Maize Flour Produced (Kg)",
                             "Milling Loss (Kg)", "Maize Bran Produced (Kg)", "Sales of Maize Flour (Kg)",
                             "Unit Price of Maize Flour (UGX/Kg)", "Sales Revenue - Maize Flour (UGX)",
@@ -591,6 +537,7 @@
 
                         dataToDownload = filteredData.map(row => [
                             row.date, row.maizePurchased, row.maizeUnitPrice, row.costMaize,
+                            row.walkInMaizeKg, row.millingPricePerKg, row.millingRevenue, // Include walk-in maize and milling data
                             row.maizeMilled, (row.maizeMilled * 0.70).toFixed(2), row.flourProduced,
                             (row.maizeMilled - (row.flourProduced + row.branProduced)).toFixed(2),
                             row.branProduced, row.flourSold,
@@ -610,175 +557,4 @@
                     const csvContent = [
                         headers.map(header => `"${header}"`).join(','),
                         ...dataToDownload.map(row => row.map(item => `"${item}"`).join(','))
-                    ].join('\n');
-
-                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                    const url = URL.createObjectURL(blob);
-                    const link = document.createElement('a');
-                    link.setAttribute('href', url);
-                    link.setAttribute('download', filename);
-                    link.style.visibility = 'hidden';
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    URL.revokeObjectURL(url);
-                    downloadStatus.textContent = `"${filename}" downloaded successfully!`;
-                };
-            }
-
-            // --- Authentication Form Logic ---
-            const authForm = document.getElementById('auth-form');
-            const authTitle = document.getElementById('auth-title');
-            const authSubmitButton = document.getElementById('auth-submit-button');
-            const toggleAuthModeButton = document.getElementById('toggle-auth-mode');
-            const emailInput = document.getElementById('email');
-            const passwordInput = document.getElementById('auth-password');
-            const togglePasswordVisibilityButton = document.getElementById('toggle-password-visibility');
-            const authErrorMessage = document.getElementById('auth-error-message');
-            const emailVerificationMessage = document.getElementById('email-verification-message');
-
-            let isSignUpMode = false;
-
-            if (authForm) {
-                authForm.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    authErrorMessage.classList.add('hidden');
-                    emailVerificationMessage.classList.add('hidden');
-
-                    const email = emailInput.value;
-                    const password = passwordInput.value;
-
-                    try {
-                        if (isSignUpMode) {
-                            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                            await sendEmailVerification(userCredential.user);
-                            emailVerificationMessage.textContent = 'Verification email sent! Please check your inbox and verify your email to log in.';
-                            emailVerificationMessage.classList.remove('hidden');
-                            // Changed to alert for better visibility to the user since custom modals are not implemented
-                            alert('Account created! Please verify your email to log in.');
-                            // Switch back to login mode after successful signup and verification email sent
-                            isSignUpMode = false; 
-                            authTitle.textContent = 'Staff Login';
-                            authSubmitButton.textContent = 'Login';
-                            toggleAuthModeButton.textContent = "Don't have an account? Sign Up";
-                        } else {
-                            await signInWithEmailAndPassword(auth, email, password);
-                            // onAuthStateChanged listener handles UI update upon successful login
-                        }
-                    } catch (error) {
-                        let errorMessage = 'An unknown error occurred.';
-                        switch (error.code) {
-                            case 'auth/user-not-found':
-                            case 'auth/wrong-password':
-                            case 'auth/invalid-credential': // More generic for newer Firebase versions
-                                errorMessage = 'Invalid email or password.';
-                                break;
-                            case 'auth/email-already-in-use':
-                                errorMessage = 'This email is already registered. Try logging in.';
-                                break;
-                            case 'auth/weak-password':
-                                errorMessage = 'Password is too weak. Must be at least 6 characters.';
-                                break;
-                            case 'auth/invalid-email':
-                                errorMessage = 'Invalid email format.';
-                                break;
-                            case 'auth/network-request-failed':
-                                errorMessage = 'Network error. Please check your internet connection.';
-                                break;
-                            default:
-                                errorMessage = `Authentication error: ${error.message}`;
-                                console.error("Firebase Auth Error:", error.code, error.message);
-                        }
-                        if (authErrorMessage) {
-                            authErrorMessage.textContent = errorMessage;
-                            authErrorMessage.classList.remove('hidden');
-                        }
-                    }
-                });
-
-                if (toggleAuthModeButton) {
-                    toggleAuthModeButton.addEventListener('click', () => {
-                        isSignUpMode = !isSignUpMode;
-                        authTitle.textContent = isSignUpMode ? 'Staff Sign Up' : 'Staff Login';
-                        authSubmitButton.textContent = isSignUpMode ? 'Sign Up' : 'Login';
-                        toggleAuthModeButton.textContent = isSignUpMode ? 'Already have an account? Login' : "Don't have an account? Sign Up";
-                        authErrorMessage.classList.add('hidden'); // Clear error message on mode switch
-                        emailVerificationMessage.classList.add('hidden');
-                    });
-                }
-            }
-
-            // --- Toggle Password Visibility ---
-            if (togglePasswordVisibilityButton && passwordInput) {
-                togglePasswordVisibilityButton.addEventListener('click', () => {
-                    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-                    passwordInput.setAttribute('type', type);
-                    togglePasswordVisibilityButton.textContent = type === 'password' ? '👁️' : '🔒'; // Change icon
-                });
-            }
-
-            const logoutButton = document.getElementById('logout-button');
-            if (logoutButton) {
-                logoutButton.addEventListener('click', async () => {
-                    try {
-                        await signOut(auth);
-                        state.activeView = 'dashboard'; // Reset view to dashboard on logout
-                        updateUI(); // This will trigger the login screen display
-                        // Changed to alert for better visibility to the user
-                        alert('You have been logged out.');
-                    } catch (error) {
-                        console.error("Logout error:", error);
-                        // Changed to alert for better visibility to the user
-                        alert('Error logging out. Please try again.');
-                    }
-                });
-            }
-
-            document.getElementById('daily-entry-form').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                if (!state.currentUser) {
-                    // Changed to alert for better visibility to the user
-                    alert('Please log in to add data.');
-                    return;
-                }
-
-                const newEntry = {
-                    date: e.target.elements['date'].value,
-                    maizePurchased: parseFloat(e.target.elements['maize-purchased'].value),
-                    maizeUnitPrice: parseFloat(e.target.elements['maize-unit-price'].value),
-                    flourProduced: parseFloat(e.target.elements['flour-produced'].value),
-                    flourSold: parseFloat(e.target.elements['flour-sold'].value),
-                    flourPrice: parseFloat(e.target.elements['flour-price'].value),
-                    branSold: parseFloat(e.target.elements['bran-sold'].value),
-                    branPrice: parseFloat(e.target.elements['bran-price'].value),
-                    timestamp: serverTimestamp() // Add server timestamp for consistent ordering
-                };
-                
-                try {
-                    await addDoc(collection(db, `artifacts/${appId}/users/${state.currentUser.uid}/dailyLogs`), newEntry);
-                    e.target.reset();
-                    const dateInput = document.getElementById('date');
-                    if (dateInput) {
-                        dateInput.valueAsDate = new Date();
-                    }
-                    // Changed to alert for better visibility to the user
-                    alert('Log entry added successfully!');
-                    // Data will automatically update via onSnapshot listener
-                } catch (error) {
-                    console.error("Error adding document: ", error);
-                    // Changed to alert for better visibility to the user
-                    alert("Error adding log entry. Please try again.");
-                }
-            });
-            
-            document.querySelector('nav').addEventListener('click', (e) => {
-                if (e.target.matches('.nav-link')) {
-                    const newView = e.target.id.split('-')[1];
-                    state.activeView = newView;
-                    updateUI();
-                }
-            });
-        }); // End of DOMContentLoaded
-    </script>
-</body>
-</html>
+                    ].j
