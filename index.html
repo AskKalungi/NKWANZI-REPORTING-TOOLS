@@ -145,6 +145,7 @@
                                     </tr>
                                 </thead>
                                 <tbody id="log-table-body">
+                                    <!-- Message for no data will be inserted here by JavaScript -->
                                 </tbody>
                             </table>
                         </div>
@@ -245,6 +246,7 @@
             const formatCurrency = (value) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'UGX', minimumFractionDigits: 0 }).format(value);
 
             function updateUI() {
+                console.log(`Attempting to update UI to view: ${state.activeView}`); // Log for debugging responsiveness
                 const views = document.querySelectorAll('.content-section');
                 const navLinks = document.querySelectorAll('.nav-link');
 
@@ -304,6 +306,20 @@
                 updateUI(); // Re-render UI with new data
             }, (error) => {
                 console.error("Error fetching Firestore data:", error);
+                // Provide user feedback if data fetching fails
+                const dashboardSection = document.getElementById('view-dashboard');
+                if (dashboardSection && dashboardSection.classList.contains('active')) {
+                    dashboardSection.innerHTML = `<div class="text-center text-red-600 p-8">
+                                                    <p class="font-bold text-lg mb-2">Error Loading Data!</p>
+                                                    <p>Please check your Firebase Firestore security rules.</p>
+                                                    <p>Ensure read/write access is granted for public data.</p>
+                                                  </div>`;
+                }
+                // Also update entry log table to show error/no data message
+                const tableBody = document.getElementById('log-table-body');
+                if (tableBody) {
+                    tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-red-500">Error loading data. Check console for details.</td></tr>`;
+                }
             });
 
 
@@ -414,14 +430,18 @@
             function renderEntryLog() {
                 const tableBody = document.getElementById('log-table-body');
                 if (tableBody) {
-                    tableBody.innerHTML = state.dbData.slice(0, 10).map(d => `
-                        <tr class="bg-white border-b">
-                            <td class="px-6 py-4">${d.date}</td>
-                            <td class="px-6 py-4">${d.maizeMilled.toFixed(2)}</td> <!-- Display total maize in -->
-                            <td class="px-6 py-4">${formatCurrency(d.totalRevenue)}</td>
-                            <td class="px-6 py-4 font-medium ${d.profit > 0 ? 'text-green-600' : 'text-red-600'}">${formatCurrency(d.profit)}</td>
-                        </tr>
-                    `).join('');
+                    if (state.dbData.length === 0) {
+                        tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">No recent entries. Add data using the form above.</td></tr>`;
+                    } else {
+                        tableBody.innerHTML = state.dbData.slice(0, 10).map(d => `
+                            <tr class="bg-white border-b">
+                                <td class="px-6 py-4">${d.date}</td>
+                                <td class="px-6 py-4">${d.maizeMilled.toFixed(2)}</td> <!-- Display total maize in -->
+                                <td class="px-6 py-4">${formatCurrency(d.totalRevenue)}</td>
+                                <td class="px-6 py-4 font-medium ${d.profit > 0 ? 'text-green-600' : 'text-red-600'}">${formatCurrency(d.profit)}</td>
+                            </tr>
+                        `).join('');
+                    }
                 }
                 const dateInput = document.getElementById('date');
                 if (dateInput) {
@@ -557,4 +577,70 @@
                     const csvContent = [
                         headers.map(header => `"${header}"`).join(','),
                         ...dataToDownload.map(row => row.map(item => `"${item}"`).join(','))
-                    ].j
+                    ].join('\n');
+
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.setAttribute('href', url);
+                    link.setAttribute('download', filename);
+                    link.style.visibility = 'hidden';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                    downloadStatus.textContent = `"${filename}" downloaded successfully!`;
+                };
+            }
+
+            document.getElementById('daily-entry-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                // No user check needed as there's no authentication
+
+                const newEntry = {
+                    date: e.target.elements['date'].value,
+                    maizePurchased: parseFloat(e.target.elements['maize-purchased'].value) || 0, // Ensure default to 0
+                    maizeUnitPrice: parseFloat(e.target.elements['maize-unit-price'].value) || 0, // Ensure default to 0
+                    walkInMaizeKg: parseFloat(e.target.elements['walk-in-maize'].value) || 0, // New field for walk-in maize
+                    millingPricePerKg: parseFloat(e.target.elements['milling-price-per-kg'].value) || 0, // New field for milling price
+                    flourProduced: parseFloat(e.target.elements['flour-produced'].value) || 0,
+                    flourSold: parseFloat(e.target.elements['flour-sold'].value) || 0,
+                    flourPrice: parseFloat(e.target.elements['flour-price'].value) || 0,
+                    branSold: parseFloat(e.target.elements['bran-sold'].value) || 0,
+                    branPrice: parseFloat(e.target.elements['bran-price'].value) || 0,
+                    timestamp: serverTimestamp() // Add server timestamp for consistent ordering
+                };
+                
+                try {
+                    // Use the defaultUserId for adding documents
+                    await addDoc(collection(db, `artifacts/${appId}/public/data/dailyLogs`), newEntry); // Adjusted path for public data
+                    e.target.reset();
+                    const dateInput = document.getElementById('date');
+                    if (dateInput) {
+                        dateInput.valueAsDate = new Date();
+                    }
+                    // Reset specific fields
+                    document.getElementById('walk-in-maize').value = '0';
+                    document.getElementById('milling-price-per-kg').value = '0';
+                    document.getElementById('maize-purchased').value = '0';
+                    document.getElementById('maize-unit-price').value = '0';
+
+                    alert('Log entry added successfully!');
+                    // Data will automatically update via onSnapshot listener
+                } catch (error) {
+                    console.error("Error adding document: ", error);
+                    alert("Error adding log entry. Please try again.");
+                }
+            });
+            
+            document.querySelector('nav').addEventListener('click', (e) => {
+                if (e.target.matches('.nav-link')) {
+                    const newView = e.target.id.split('-')[1];
+                    state.activeView = newView;
+                    updateUI();
+                }
+            });
+        }); // End of DOMContentLoaded
+    </script>
+</body>
+</html>
