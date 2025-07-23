@@ -215,10 +215,30 @@
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
 
+        // Log the appId and firebaseConfig to help debug
+        console.log("Firebase App ID (from env):", appId);
+        console.log("Firebase Config (from env):", firebaseConfig);
+
+
         // Initialize Firebase on DOMContentLoaded
         document.addEventListener('DOMContentLoaded', () => {
-            const app = initializeApp(firebaseConfig);
-            const db = getFirestore(app);
+            let app;
+            let db;
+            try {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+            } catch (e) {
+                console.error("Failed to initialize Firebase:", e);
+                document.getElementById('main-content').innerHTML = `
+                    <div class="text-center text-red-600 p-8">
+                        <p class="font-bold text-lg mb-2">Error: Firebase Initialization Failed!</p>
+                        <p>This is likely due to an invalid Firebase configuration.</p>
+                        <p>Please ensure your Firebase project is set up correctly and the configuration is valid.</p>
+                        <p>Check your browser's console (F12) for more details.</p>
+                    </div>
+                `;
+                return; // Stop execution if Firebase fails to initialize
+            }
 
             const state = {
                 activeView: 'dashboard',
@@ -268,9 +288,12 @@
             // For a non-authenticated app, we'll use a fixed 'public' user ID
             // In a real scenario, you might have public data or a single admin user.
             const defaultUserId = 'public_user_id'; // You can change this to a specific ID if needed for public data
-            const publicDailyLogsCollectionRef = collection(db, `artifacts/${appId}/public/data/dailyLogs`); // Adjusted path for public data
+            const publicDailyLogsCollectionPath = `artifacts/${appId}/public/data/dailyLogs`; // Define path as a string
+            const publicDailyLogsCollectionRef = collection(db, publicDailyLogsCollectionPath); // Use the string path
 
-            // IMPORTANT: For this public data path to work, you MUST set your Firestore Security Rules
+            console.log("Firestore collection path being used:", publicDailyLogsCollectionPath); // Log the full path
+
+            // IMPORTANT: For this public data path to work, you MUST set your Firebase Firestore Security Rules
             // to allow public read and write access to this specific collection.
             // Go to Firebase Console -> Firestore Database -> Rules tab and add:
             /*
@@ -313,12 +336,13 @@
                                                     <p class="font-bold text-lg mb-2">Error Loading Data!</p>
                                                     <p>Please check your Firebase Firestore security rules.</p>
                                                     <p>Ensure read/write access is granted for public data.</p>
+                                                    <p>Also, check your browser's console (F12) for more details.</p>
                                                   </div>`;
                 }
                 // Also update entry log table to show error/no data message
                 const tableBody = document.getElementById('log-table-body');
                 if (tableBody) {
-                    tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-red-500">Error loading data. Check console for details.</td></tr>`;
+                    tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-red-500">Error loading data. Check console (F12) for details.</td></tr>`;
                 }
             });
 
@@ -613,7 +637,7 @@
                 
                 try {
                     // Use the defaultUserId for adding documents
-                    await addDoc(collection(db, `artifacts/${appId}/public/data/dailyLogs`), newEntry); // Adjusted path for public data
+                    await addDoc(collection(db, publicDailyLogsCollectionPath), newEntry); // Use the defined path
                     e.target.reset();
                     const dateInput = document.getElementById('date');
                     if (dateInput) {
